@@ -37,6 +37,9 @@ static TouchServiceState *prv_get_state(void) {
 
 static void prv_handle_touch_event(PebbleEvent *e, void *context) {
   TouchServiceState *state = prv_get_state();
+  if (!state) {
+    return;
+  }
   if (state->raw_handler && e->type == PEBBLE_TOUCH_EVENT) {
     state->raw_handler(&e->touch.event, state->raw_context);
   }

@@ -14,13 +14,23 @@
 #include "syscall/syscall_internal.h"
 #include "system/logging.h"
 #include "pbl/os/mutex.h"
+#include "drivers/rtc.h"
+#include "pbl/os/tick.h"
 #include "system/passert.h"
 
 PBL_LOG_MODULE_DEFINE(service_touch, CONFIG_SERVICE_TOUCH_LOG_LEVEL);
 
+//! The sensor interrupts on every reported coordinate change, which is far
+//! faster than any subscriber can consume. A third-party app whose event queue
+//! overflows gets closed by event_service, so rate-limit position updates to
+//! roughly the display refresh; touchdown, liftoff and gestures are never
+//! dropped.
+#define TOUCH_POSITION_MIN_INTERVAL_MS 30
+
 static TouchState s_touch_state = TouchState_FingerUp;
 static int16_t s_last_x;
 static int16_t s_last_y;
+static RtcTicks s_last_position_ticks;
 
 static PebbleMutex *s_touch_mutex;
 
@@ -167,6 +177,7 @@ void touch_handle_update(TouchState touch_state, int16_t x, int16_t y) {
     mutex_unlock(s_touch_mutex);
 
     if (touch_state == TouchState_FingerDown) {
+      s_last_position_ticks = 0;
       PBL_ANALYTICS_ADD(touch_event_count, 1);
       PBL_LOG_DBG("Touch: Touchdown @ (%" PRId16 ", %" PRId16 ")", x, y);
       prv_put_touch_event(TouchEvent_Touchdown, x, y);
@@ -178,6 +189,15 @@ void touch_handle_update(TouchState touch_state, int16_t x, int16_t y) {
   }
 
   if (touch_state == TouchState_FingerDown && (x != s_last_x || y != s_last_y)) {
+    const RtcTicks now = rtc_get_ticks();
+    if ((now - s_last_position_ticks) <
+        milliseconds_to_ticks(TOUCH_POSITION_MIN_INTERVAL_MS)) {
+      // Leave s_last_x/y alone so the next update still compares as a move and
+      // carries the newest coordinates.
+      mutex_unlock(s_touch_mutex);
+      return;
+    }
+    s_last_position_ticks = now;
     s_last_x = x;
     s_last_y = y;
     mutex_unlock(s_touch_mutex);
@@ -223,6 +243,7 @@ void touch_reset(void) {
   s_touch_state = TouchState_FingerUp;
   s_last_x = 0;
   s_last_y = 0;
+  s_last_position_ticks = 0;
   mutex_unlock(s_touch_mutex);
 }
 
