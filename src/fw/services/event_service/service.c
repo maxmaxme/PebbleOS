@@ -201,6 +201,18 @@ static bool prv_steal_buffer(void *buf, EventServiceEntry *service, PebbleEvent 
   }
 }
 
+//! Events that report a continuously changing value, where only the newest one
+//! matters. Dropping these when a queue is full is correct behaviour, not a sign
+//! that the subscriber is broken, so it must not cost an app its life.
+static bool prv_event_is_lossy(PebbleEventType type) {
+  switch (type) {
+    case PEBBLE_TOUCH_EVENT:
+      return true;
+    default:
+      return false;
+  }
+}
+
 void event_service_handle_event(PebbleEvent *e) {
   EventServiceEntry *service = s_event_services[e->type];
   if (service == NULL) {
@@ -222,6 +234,10 @@ void event_service_handle_event(PebbleEvent *e) {
         continue;
       } else {
         if (!prv_event_service_send_event(service->subscribers[i], e)) {
+          if (prv_event_is_lossy(e->type)) {
+            PBL_LOG_DBG("Queue full, dropped %d for task %d", (int)e->type, (int)i);
+            continue;
+          }
           PBL_LOG_ERR("Queue full! %d not delivered to task %d!",
                   (int)e->type, (int)i);
 #ifndef CONFIG_RELEASE
