@@ -466,7 +466,9 @@ clar(ctx,
 
 clar(ctx,
     sources_ant_glob = "src/fw/services/touch/touch.c" \
-        " tests/fakes/fake_events.c",
+        " lib/os/tick.c" \
+        " tests/fakes/fake_events.c" \
+        " tests/fakes/fake_rtc.c",
     test_sources_ant_glob = "test_touch.c")
 
 clar(ctx,

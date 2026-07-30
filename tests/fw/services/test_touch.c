@@ -13,6 +13,17 @@
 #include <stdint.h>
 
 #include "fake_events.h"
+#include "fake_rtc.h"
+
+#include "pbl/os/tick.h"
+
+//! Position updates are rate-limited, so a test that wants two of them has to
+//! let the clock move between them.
+#define PAST_THE_RATE_LIMIT_MS 40
+
+static void prv_advance_past_rate_limit(void) {
+  fake_rtc_increment_ticks(milliseconds_to_ticks(PAST_THE_RATE_LIMIT_MS));
+}
 
 // Stubs
 #include "stubs_analytics.h"
@@ -48,6 +59,7 @@ void touch_sensor_set_enabled(bool enabled) {
 // setup and teardown
 void test_touch__initialize(void) {
   fake_event_init();
+  fake_rtc_init(0, 0);
   s_add_subscriber_cb = NULL;
   s_remove_subscriber_cb = NULL;
   s_touch_sensor_enable_count = 0;
@@ -91,9 +103,43 @@ void test_touch__position_update(void) {
   cl_assert_equal_i(fake_event_get_count(), 2);
   prv_assert_touch_event(TouchEvent_PositionUpdate, 13, 13);
 
+  prv_advance_past_rate_limit();
   touch_handle_update(TouchState_FingerDown, 18, 5);
   cl_assert_equal_i(fake_event_get_count(), 3);
   prv_assert_touch_event(TouchEvent_PositionUpdate, 18, 5);
+}
+
+void test_touch__position_updates_are_rate_limited(void) {
+  touch_handle_update(TouchState_FingerDown, 10, 10);
+  touch_handle_update(TouchState_FingerDown, 11, 11);
+  fake_event_reset_count();
+
+  // The sensor reports far faster than a subscriber can drain its queue, so
+  // updates arriving within the window are dropped rather than queued.
+  touch_handle_update(TouchState_FingerDown, 12, 12);
+  touch_handle_update(TouchState_FingerDown, 13, 13);
+  cl_assert_equal_i(fake_event_get_count(), 0);
+
+  // Dropping must not lose the position: the next update carries where the
+  // finger actually is now, not the coordinates that were skipped.
+  prv_advance_past_rate_limit();
+  touch_handle_update(TouchState_FingerDown, 14, 14);
+  cl_assert_equal_i(fake_event_get_count(), 1);
+  prv_assert_touch_event(TouchEvent_PositionUpdate, 14, 14);
+}
+
+void test_touch__first_position_after_touchdown_is_not_delayed(void) {
+  // A fresh press must report immediately, whatever the previous drag left
+  // behind in the rate limiter.
+  touch_handle_update(TouchState_FingerDown, 10, 10);
+  touch_handle_update(TouchState_FingerDown, 11, 11);
+  touch_handle_update(TouchState_FingerUp, 11, 11);
+  fake_event_reset_count();
+
+  touch_handle_update(TouchState_FingerDown, 20, 20);
+  touch_handle_update(TouchState_FingerDown, 21, 21);
+  cl_assert_equal_i(fake_event_get_count(), 2);
+  prv_assert_touch_event(TouchEvent_PositionUpdate, 21, 21);
 }
 
 void test_touch__position_stationary(void) {

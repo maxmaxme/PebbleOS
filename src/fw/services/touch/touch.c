@@ -31,6 +31,7 @@ static TouchState s_touch_state = TouchState_FingerUp;
 static int16_t s_last_x;
 static int16_t s_last_y;
 static RtcTicks s_last_position_ticks;
+static bool s_position_reported;
 
 static PebbleMutex *s_touch_mutex;
 
@@ -177,7 +178,7 @@ void touch_handle_update(TouchState touch_state, int16_t x, int16_t y) {
     mutex_unlock(s_touch_mutex);
 
     if (touch_state == TouchState_FingerDown) {
-      s_last_position_ticks = 0;
+      s_position_reported = false;
       PBL_ANALYTICS_ADD(touch_event_count, 1);
       PBL_LOG_DBG("Touch: Touchdown @ (%" PRId16 ", %" PRId16 ")", x, y);
       prv_put_touch_event(TouchEvent_Touchdown, x, y);
@@ -190,7 +191,7 @@ void touch_handle_update(TouchState touch_state, int16_t x, int16_t y) {
 
   if (touch_state == TouchState_FingerDown && (x != s_last_x || y != s_last_y)) {
     const RtcTicks now = rtc_get_ticks();
-    if ((now - s_last_position_ticks) <
+    if (s_position_reported && (now - s_last_position_ticks) <
         milliseconds_to_ticks(TOUCH_POSITION_MIN_INTERVAL_MS)) {
       // Leave s_last_x/y alone so the next update still compares as a move and
       // carries the newest coordinates.
@@ -198,6 +199,7 @@ void touch_handle_update(TouchState touch_state, int16_t x, int16_t y) {
       return;
     }
     s_last_position_ticks = now;
+    s_position_reported = true;
     s_last_x = x;
     s_last_y = y;
     mutex_unlock(s_touch_mutex);
@@ -244,6 +246,7 @@ void touch_reset(void) {
   s_last_x = 0;
   s_last_y = 0;
   s_last_position_ticks = 0;
+  s_position_reported = false;
   mutex_unlock(s_touch_mutex);
 }
 
