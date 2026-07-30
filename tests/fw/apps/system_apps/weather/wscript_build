@@ -74,6 +74,7 @@ clar(ctx,
                         " src/fw/applib/ui/text_layer.c" \
                         " src/fw/applib/ui/text_layer_flow.c" \
                         " src/fw/applib/ui/window.c" \
+                        " src/fw/applib/touch_service_stub.c" \
                         " src/fw/applib/ui/scroll_layer.c" \
                         " src/fw/applib/ui/inverter_layer.c" \
                         " src/fw/applib/ui/content_indicator.c" \

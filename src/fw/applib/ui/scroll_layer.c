@@ -8,6 +8,7 @@
 #include "applib/graphics/graphics.h"
 #include "applib/ui/content_indicator_private.h"
 #include "applib/ui/shadows.h"
+#include "applib/touch_service_private.h"
 #include "applib/ui/window.h"
 #include "process_management/app_manager.h"
 #include "system/logging.h"
@@ -113,6 +114,12 @@ bool scroll_layer_is_instance(const Layer *layer) {
 }
 
 void scroll_layer_deinit(ScrollLayer *scroll_layer) {
+  TouchDragState *drag = touch_service_get_drag_state();
+  if (drag && drag->owner == scroll_layer) {
+    // Leaving a dangling owner here would outlive the layer.
+    drag->owner = NULL;
+    drag->active = false;
+  }
   animation_destroy(property_animation_get_animation(scroll_layer->animation));
   content_indicator_destroy_for_scroll_layer(scroll_layer);
   layer_deinit(&scroll_layer->layer);
@@ -295,8 +302,48 @@ static void scroll_layer_click_config_provider(ScrollLayer *scroll_layer) {
   }
 }
 
+//! Drag the content along with the finger. Deltas rather than absolute
+//! positions, so grabbing the content anywhere works and the offset stays
+//! wherever the buttons or an animation last left it.
+static void prv_touch_handler(const TouchEvent *event, void *context) {
+  ScrollLayer *scroll_layer = context;
+  TouchDragState *drag = touch_service_get_drag_state();
+  if (!drag) {
+    return;
+  }
+
+  switch (event->type) {
+    case TouchEvent_Touchdown:
+      drag->owner = scroll_layer;
+      drag->last_y = event->y;
+      drag->active = true;
+      break;
+
+    case TouchEvent_PositionUpdate: {
+      if (!drag->active || drag->owner != scroll_layer) {
+        break;
+      }
+      GPoint offset = scroll_layer_get_content_offset(scroll_layer);
+      offset.y += event->y - drag->last_y;
+      drag->last_y = event->y;
+      // Unanimated: the finger is the animation, and set_content_offset()
+      // cancels a button-initiated one on the way through.
+      scroll_layer_set_content_offset(scroll_layer, offset, false);
+      break;
+    }
+
+    case TouchEvent_Liftoff:
+      drag->active = false;
+      drag->owner = NULL;
+      break;
+  }
+}
+
 void scroll_layer_set_click_config_onto_window(ScrollLayer *scroll_layer, struct Window *window) {
   window_set_click_config_provider_with_context(window, (ClickConfigProvider) scroll_layer_click_config_provider, scroll_layer);
+  // The touch service holds one subscription per task, so whichever scroll
+  // layer takes the window's buttons takes the finger with them.
+  touch_service_subscribe(prv_touch_handler, scroll_layer);
 }
 
 void scroll_layer_set_callbacks(ScrollLayer *scroll_layer, ScrollLayerCallbacks callbacks) {

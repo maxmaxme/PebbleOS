@@ -77,6 +77,11 @@ void touch_service_unsubscribe(void) {
   state->raw_context = NULL;
 }
 
+TouchDragState *touch_service_get_drag_state(void) {
+  TouchServiceState *state = prv_get_state();
+  return state ? &state->drag : NULL;
+}
+
 bool touch_service_is_enabled(void) {
   return sys_touch_service_is_enabled();
 }

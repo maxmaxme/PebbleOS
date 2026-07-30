@@ -32,6 +32,7 @@ common_sources_ant_glob = (
     " src/fw/applib/ui/inverter_layer.c"
     " src/fw/applib/ui/layer.c"
     " src/fw/applib/ui/menu_layer.c"
+    " src/fw/applib/touch_service_stub.c"
     " src/fw/applib/ui/scroll_layer.c"
     " src/fw/applib/ui/shadows.c"
     " src/fw/applib/ui/window.c"

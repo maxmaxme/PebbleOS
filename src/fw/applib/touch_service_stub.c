@@ -18,6 +18,10 @@ void touch_service_subscribe(TouchServiceHandler handler, void *context) {
 void touch_service_unsubscribe(void) {
 }
 
+TouchDragState *touch_service_get_drag_state(void) {
+  return NULL;
+}
+
 bool touch_service_is_enabled(void) {
   return false;
 }

@@ -22,6 +22,7 @@ clar(ctx,
                        "src/fw/applib/ui/animation_interpolate.c "
                        "src/fw/applib/ui/layer.c "
                        "src/fw/applib/ui/shadows.c "
+                       "src/fw/applib/touch_service_stub.c "
                        "src/fw/applib/ui/scroll_layer.c ",
     test_sources_ant_glob="test_scroll_layer.c")
 
@@ -160,6 +161,7 @@ clar(ctx,
 clar(ctx,
     sources_ant_glob = "  " \
                        " src/fw/applib/ui/layer.c" \
+                       " src/fw/applib/touch_service_stub.c" \
                        " src/fw/applib/ui/scroll_layer.c" \
                        " src/fw/applib/ui/menu_layer.c" \
                        " src/fw/applib/ui/shadows.c" \
@@ -254,6 +256,7 @@ clar(ctx,
                         " src/fw/applib/ui/crumbs_layer.c" \
                         " src/fw/applib/ui/window.c" \
                         " src/fw/applib/ui/menu_layer.c" \
+                        " src/fw/applib/touch_service_stub.c" \
                         " src/fw/applib/ui/scroll_layer.c" \
                         " src/fw/applib/ui/inverter_layer.c" \
                         " src/fw/applib/ui/content_indicator.c" \
@@ -272,6 +275,7 @@ clar(ctx,
          " src/fw/applib/ui/action_button.c"
          " src/fw/applib/ui/kino/kino_layer.c"
          " src/fw/applib/ui/kino/kino_player.c"
+         " src/fw/applib/touch_service_stub.c"
          " src/fw/applib/ui/scroll_layer.c"
          " src/fw/applib/ui/shadows.c"
          " src/fw/applib/ui/status_bar_layer.c"
@@ -313,6 +317,7 @@ clar(ctx,
                         " src/fw/applib/ui/text_layer_flow.c" \
                         " src/fw/applib/ui/window.c" \
                         " src/fw/applib/ui/menu_layer.c" \
+                        " src/fw/applib/touch_service_stub.c" \
                         " src/fw/applib/ui/scroll_layer.c" \
                         " src/fw/applib/ui/shadows.c"
                         " src/fw/applib/ui/inverter_layer.c" \
@@ -346,6 +351,7 @@ clar(ctx,
                         " src/fw/applib/ui/kino/kino_reel/transform.c" \
                         " src/fw/applib/ui/kino/kino_reel_custom.c" \
                         " src/fw/applib/ui/menu_layer.c" \
+                        " src/fw/applib/touch_service_stub.c" \
                         " src/fw/applib/ui/scroll_layer.c" \
                         " src/fw/applib/ui/shadows.c" \
                         " src/fw/applib/ui/text_layer.c" \
@@ -446,6 +452,7 @@ clar(ctx,
         "src/fw/applib/ui/inverter_layer.c "
         "src/fw/applib/ui/menu_layer.c "
         "src/fw/applib/ui/option_menu_window.c "
+        "src/fw/applib/touch_service_stub.c "
         "src/fw/applib/ui/scroll_layer.c "
         "src/fw/applib/ui/shadows.c "
         "src/fw/applib/ui/status_bar_layer.c "

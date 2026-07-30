@@ -78,6 +78,7 @@ workout_app_sources = \
     " src/fw/applib/ui/kino/kino_player.c" \
     " src/fw/applib/ui/kino/kino_reel/transform.c" \
     " src/fw/applib/ui/kino/kino_reel_custom.c" \
+    " src/fw/applib/touch_service_stub.c" \
     " src/fw/applib/ui/scroll_layer.c" \
     " src/fw/applib/ui/shadows.c" \
     " src/fw/applib/ui/text_layer.c" \
